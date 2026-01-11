@@ -9,8 +9,8 @@ def find_min_moves():
     results[0] = {"moves": 0, "increments_40": 0, "increments_45": 0}  # Start at 0° with no moves
 
     # Explore combinations of moves, including forward and backward
-    for moves_40 in range(-degrees_in_circle, degrees_in_circle):
-        for moves_45 in range(-degrees_in_circle, degrees_in_circle):
+    for moves_40 in range(-40, 40):
+        for moves_45 in range(-45, 45):
             # Calculate the net rotation
             net_degrees = (moves_40 * increment_40) + (moves_45 * increment_45)
 
