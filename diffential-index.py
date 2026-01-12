@@ -1,45 +1,69 @@
+import itertools
+import math
 
-def find_min_moves():
-    degrees_in_circle = 360
-    increment_40 = 360 // 40  # 9 degrees per move
-    increment_45 = 360 // 45  # 8 degrees per move
-
-    # Initialize a list to store the results
-    results = [{"moves": float('inf'), "increments_40": 0, "increments_45": 0} for _ in range(degrees_in_circle)]
-    results[0] = {"moves": 0, "increments_40": 0, "increments_45": 0}  # Start at 0° with no moves
-
-    # Explore combinations of moves, including forward and backward
-    for moves_40 in range(-40, 40):
-        for moves_45 in range(-45, 45):
-            # Calculate the net rotation
-            net_degrees = (moves_40 * increment_40) + (moves_45 * increment_45)
-
-            # Normalize to [0, 360)
-            net_degrees %= degrees_in_circle
-
-            # Calculate the total number of moves
-            total_moves = abs(moves_40) + abs(moves_45)
-
-            # If this is the first time or a better combination is found
-            if total_moves < results[net_degrees]["moves"]:
-                results[net_degrees] = {
-                    "moves": total_moves,
-                    "increments_40": moves_40,
-                    "increments_45": moves_45,
-                }
-
-    return results
+def find_min_moves(*increments: int, divisions: int=360) -> list[tuple[int, ...] | tuple[None, ...]]:
+    """Find the minimum number of moves of the input increments to reach each division
+    
+    Args:
+        *increments (int): The tooth increments to check against as varargs
+        divisions (int): The total number of divisions (degrees) that you need to visit
+    
+    Returns:
+        (list[tuple[int, ...]]): A list of the best moves for the input increments with the index being 
+        the division value.
+    
+    Note:
+        Returned move tuple is in the same order as the input increments. Best usage is to zip 
+        the input values with the output:
+        ```python
+        >>> gears = (40, 45)
+        >>> move_counts = [dict(zip(gears, moves)) for moves in min_moves_iter(*gears)]
+        ```
+    
+    Note:
+        This function will only return moves that land on valid integer ratios. Any moves that
+        end up at a fractional division will be skipped. If a division has no valid moves, it will 
+        be set to `tuple[None,...]`. 
+    
+    Usage:
+        ```python
+        >>> min_moves_iter(40, 45, divisions=360)[40]
+        (0, -5)
+        >>> min_moves_iter(40, 45)[85]
+        (5, 5)
+        ```
+    """
+    # Get units per move
+    dpms = tuple(divisions // inc for inc in increments)
+    # Initialize an array with best move per division
+    _default: tuple[None, ...] = tuple(None for _ in range(len(increments)))
+    best_moves: list[tuple[int, ...] | tuple[None, ...]] = [_default for _ in range(divisions)]
+    # Iterate all possible moves
+    for moves in itertools.product(*((range(-inc, inc+1)) for inc in increments)):
+        # Get the final position of the current moveset
+        pos = math.sumprod(moves, dpms) % divisions
+        # Skip non-integer positions
+        if not pos.is_integer():
+            continue
+        # Convert to integer
+        pos = int(pos)
+        # Set best to current if no existing moves
+        if best_moves[pos] == _default:
+            best_moves[pos] = moves
+        # Set best to current if current requires less moves
+        elif sum(map(abs, moves)) < sum(map(abs, best_moves[pos])): # type: ignore (None is filtered by previous condition)
+            best_moves[pos] = moves
+    return best_moves
 
 def main():
-    results = find_min_moves()
-    for degree, data in enumerate(results):
-        direction_40 = "forward" if data["increments_40"] >= 0 else "backward"
-        direction_45 = "forward" if data["increments_45"] >= 0 else "backward"
-        print(
-            f"Degree: {degree}° requires {data['moves']} moves "
-            f"({abs(data['increments_40'])} increments of 40-side {direction_40}, "
-            f"{abs(data['increments_45'])} increments of 45-side {direction_45})."
-        )
+    #increments = (13, 7, 80)
+    increments = (40, 45)
+    results = find_min_moves(*increments)
+    for degree, moves in enumerate(results):
+        if None in moves:
+            print(f'Degree: {degree}° is unreachable!')
+            continue
+        print(f"Degree: {degree}° requires {sum(map(abs, moves))} moves: {dict(zip(increments, moves))}") # type: ignore (None is filtered by previous condition)
 
 if __name__ == "__main__":
     main()
