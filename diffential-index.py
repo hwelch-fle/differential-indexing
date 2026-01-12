@@ -55,14 +55,14 @@ def find_min_moves(*increments: int, divisions: int=360) -> list[tuple[int, ...]
             best_moves[pos] = moves
     return best_moves
 
-def find_best_ratio() -> tuple[tuple[int, int], tuple[int, int]]:
+def find_best_ratio(min_:int=1, max_:int=90, average: bool=False) -> tuple[tuple[int, int], tuple[int, int]]:
     """Uses find_min_moves to find an increment ratio that has the least number of max
     moves
     """
     best_ratio = (None, None)
     best_moves = (None, None)
-    for i in range(1, 91):
-        for j in range(1, 91):
+    for i in range(min_, max_):
+        for j in range(min_, max_):
             moves = find_min_moves(i, j)
             if any(None in move for move in moves):
                 continue
@@ -74,7 +74,7 @@ def find_best_ratio() -> tuple[tuple[int, int], tuple[int, int]]:
             if best_ratio == (None, None):
                 best_ratio = (i, j)
                 best_moves = (max_moves, average_moves)
-            if (max_moves, average_moves) < best_moves:
+            if average and average_moves < best_moves[1] or max_moves < best_moves[0]:
                 best_moves = (max_moves, average_moves)
                 best_ratio = (i, j)
     return best_ratio, best_moves
